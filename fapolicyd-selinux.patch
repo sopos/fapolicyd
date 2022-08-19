@@ -1,0 +1,173 @@
+diff -up ./fapolicyd-selinux-0.4/fapolicyd.if.selinux ./fapolicyd-selinux-0.4/fapolicyd.if
+--- ./fapolicyd-selinux-0.4/fapolicyd.if.selinux	2021-03-23 10:21:31.000000000 +0100
++++ ./fapolicyd-selinux-0.4/fapolicyd.if	2022-06-30 10:52:05.112355159 +0200
+@@ -2,6 +2,122 @@
+ 
+ ########################################
+ ## <summary>
++##	Watch_mount directories in /boot.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++
++ifndef(`files_watch_mount_boot_dirs',`
++    interface(`files_watch_mount_boot_dirs',`
++        gen_require(`
++            type boot_t;
++	    ')
++
++	        allow $1 boot_t:dir watch_mount_dir_perms;
++    ')
++')
++
++
++########################################
++## <summary>
++##	Watch_mount home directories.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++
++ifndef(`files_watch_mount_home',`
++    interface(`files_watch_mount_home',`
++        gen_require(`
++            type home_root_t;
++	    ')
++
++	    allow $1 home_root_t:dir watch_mount_dir_perms;
++    ')
++')
++
++
++########################################
++## <summary>
++##	Watch_with_perm home directories.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++
++ifndef(`files_watch_with_perm_home',`
++interface(`files_watch_with_perm_home',`
++	gen_require(`
++		type home_root_t;
++	')
++
++	allow $1 home_root_t:dir watch_with_perm_dir_perms;
++')
++')
++
++
++########################################
++## <summary>
++##	Watch_mount dirs on a DOS filesystem.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++
++ifndef(`fs_watch_mount_dos_dirs',`
++interface(`fs_watch_mount_dos_dirs',`
++	gen_require(`
++		type dosfs_t;
++	')
++
++	watch_mount_dirs_pattern($1, dosfs_t, dosfs_t)
++')
++')
++
++
++
++########################################
++## <summary>
++##	Watch_with_perm dirs on a DOS filesystem.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++
++ifndef(`fs_watch_with_perm_dos_dirs',`
++interface(`fs_watch_with_perm_dos_dirs',`
++	gen_require(`
++		type dosfs_t;
++	')
++
++	watch_with_perm_dirs_pattern($1, dosfs_t, dosfs_t)
++')
++')
++
++
++###################################################################################################
++
++
++
++
++########################################
++## <summary>
+ ##	Execute fapolicyd_exec_t in the fapolicyd domain.
+ ## </summary>
+ ## <param name="domain">
+diff -up ./fapolicyd-selinux-0.4/fapolicyd.te.selinux ./fapolicyd-selinux-0.4/fapolicyd.te
+--- ./fapolicyd-selinux-0.4/fapolicyd.te.selinux	2021-03-23 10:21:31.000000000 +0100
++++ ./fapolicyd-selinux-0.4/fapolicyd.te	2022-06-30 10:53:01.693055971 +0200
+@@ -1,5 +1,6 @@
+ policy_module(fapolicyd, 1.0.0)
+ 
++
+ ########################################
+ #
+ # Declarations
+@@ -36,6 +37,12 @@ allow fapolicyd_t self:process { setcap
+ allow fapolicyd_t self:unix_stream_socket create_stream_socket_perms;
+ allow fapolicyd_t self:unix_dgram_socket create_socket_perms;
+ 
++gen_require(`
++	attribute file_type;
++')
++allow fapolicyd_t file_type:dir { watch_mount watch_with_perm };
++allow fapolicyd_t file_type:file { watch_mount watch_with_perm };
++
+ manage_files_pattern(fapolicyd_t, fapolicyd_log_t, fapolicyd_log_t)
+ logging_log_filetrans(fapolicyd_t, fapolicyd_log_t, file)
+ 
+@@ -61,16 +68,22 @@ corecmd_exec_bin(fapolicyd_t)
+ 
+ domain_read_all_domains_state(fapolicyd_t)
+ 
+-files_mmap_usr_files(fapolicyd_t)
++files_mmap_all_files(fapolicyd_t)
+ files_read_all_files(fapolicyd_t)
++files_watch_mount_boot_dirs(fapolicyd_t)
++files_watch_with_perm_boot_dirs(fapolicyd_t)
+ files_watch_mount_generic_tmp_dirs(fapolicyd_t)
+ files_watch_with_perm_generic_tmp_dirs(fapolicyd_t)
++files_watch_mount_home(fapolicyd_t)
++files_watch_with_perm_home(fapolicyd_t)
+ files_watch_mount_root_dirs(fapolicyd_t)
+ files_watch_with_perm_root_dirs(fapolicyd_t)
+ 
+ fs_getattr_xattr_fs(fapolicyd_t)
+ fs_watch_mount_tmpfs_dirs(fapolicyd_t)
+ fs_watch_with_perm_tmpfs_dirs(fapolicyd_t)
++fs_watch_mount_dos_dirs(fapolicyd_t)
++fs_watch_with_perm_dos_dirs(fapolicyd_t)
+ 
+ logging_send_syslog_msg(fapolicyd_t)
+ dbus_system_bus_client(fapolicyd_t)
