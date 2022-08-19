@@ -1,0 +1,6 @@
+discover:
+    how: fmf
+    url: https://github.com/RedHat-SP-Security/tests.git
+    filter: component:fapolicyd
+execute:
+    how: tmt
