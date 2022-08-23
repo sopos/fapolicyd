@@ -10,4 +10,5 @@ jobs:
   trigger: pull_request
   targets:
     - fedora-rawhide
-    - epel-all
+    - epel-9
+    - epel-8
