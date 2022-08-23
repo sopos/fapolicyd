@@ -11,9 +11,9 @@ URL: http://people.redhat.com/sgrubb/fapolicyd
 Source0: https://people.redhat.com/sgrubb/fapolicyd/%{name}-%{version}.tar.gz
 #Source1: https://github.com/linux-application-whitelisting/%{name}-selinux/releases/download/v%{semodule_version}/%{name}-selinux-%{semodule_version}.tar.gz
 # https://github.com/linux-application-whitelisting/fapolicyd-selinux/archive/refs/tags/v0.4.tar.gz#/fapolicyd-selinux-0.4.tar.gz
-Source1: https://github.com/linux-application-whitelisting/%{name}-selinux/archive/refs/tags/v%{semodule_version}.tar.gz#/%{name}-selinux-%{semodule_version}.tar.gz
+#Source1: https://github.com/linux-application-whitelisting/%{name}-selinux/archive/refs/tags/v%{semodule_version}.tar.gz#/%{name}-selinux-%{semodule_version}.tar.gz
 # we bundle uthash for rhel9
-Source2: https://github.com/troydhanson/uthash/archive/refs/tags/v2.3.0.tar.gz#/uthash-2.3.0.tar.gz
+#Source2: https://github.com/troydhanson/uthash/archive/refs/tags/v2.3.0.tar.gz#/uthash-2.3.0.tar.gz
 BuildRequires: gcc
 BuildRequires: kernel-headers
 BuildRequires: autoconf automake make gcc libtool
@@ -21,9 +21,9 @@ BuildRequires: systemd-devel openssl-devel rpm-devel file-devel file
 BuildRequires: libcap-ng-devel libseccomp-devel lmdb-devel
 BuildRequires: python3-devel
 
-%if 0%{?rhel} == 0
+#%if 0%{?rhel} == 0
 BuildRequires: uthash-devel
-%endif
+#%endif
 
 Requires: %{name}-plugin
 Recommends: %{name}-selinux
@@ -32,8 +32,8 @@ Requires(post): systemd-units
 Requires(preun): systemd-units
 Requires(postun): systemd-units
 
-Patch1: fapolicyd-uthash-bundle.patch
-Patch2: fapolicyd-selinux.patch
+#Patch1: fapolicyd-uthash-bundle.patch
+#Patch2: fapolicyd-selinux.patch
 
 %description
 Fapolicyd (File Access Policy Daemon) implements application whitelisting
@@ -41,32 +41,32 @@ to decide file access rights. Applications that are known via a reputation
 source are allowed access while unknown applications are not. The daemon
 makes use of the kernel's fanotify interface to determine file access rights.
 
-%package        selinux
-Summary:        Fapolicyd selinux
-Group:          Applications/System
-Requires:       %{name} = %{version}-%{release}
-BuildRequires:  selinux-policy
-BuildRequires:  selinux-policy-devel
-BuildArch: noarch
-%{?selinux_requires}
-
-%description    selinux
-The %{name}-selinux package contains selinux policy for the %{name} daemon.
+#%package        selinux
+#Summary:        Fapolicyd selinux
+#Group:          Applications/System
+#Requires:       %{name} = %{version}-%{release}
+#BuildRequires:  selinux-policy
+#BuildRequires:  selinux-policy-devel
+#BuildArch: noarch
+#%{?selinux_requires}
+#
+#%description    selinux
+#The %{name}-selinux package contains selinux policy for the %{name} daemon.
 
 %prep
 
 %setup -q
 
 # selinux
-%setup -q -D -T -a 1
+#%setup -q -D -T -a 1
 
-%if 0%{?rhel} != 0
-# uthash
-%setup -q -D -T -a 2
-%patch1 -p1 -b .uthash
-%endif
+#%if 0%{?rhel} != 0
+## uthash
+#%setup -q -D -T -a 2
+#%patch1 -p1 -b .uthash
+#%endif
 
-%patch2 -p1 -b .selinux
+#%patch2 -p1 -b .selinux
 
 # generate rules for python
 sed -i "s|%python2_path%|`readlink -f %{__python2}`|g" rules.d/*.rules
@@ -90,17 +90,17 @@ sed -i "s|%ld_so_path%|`realpath $interpret`|g" rules.d/*.rules
 
 make CFLAGS="%{optflags}" %{?_smp_mflags}
 
-# selinux
-pushd %{name}-selinux-%{semodule_version}
-make
-popd
+## selinux
+#pushd %{name}-selinux-%{semodule_version}
+#make
+#popd
 
 %check
 make check
 
-# selinux
-%pre selinux
-%selinux_relabel_pre -s %{selinuxtype}
+## selinux
+#%pre selinux
+#%selinux_relabel_pre -s %{selinuxtype}
 
 %install
 %make_install
@@ -234,22 +234,22 @@ fi
 %ghost %attr(660,%{name},%{name}) %verify(not md5 size mtime) %{_localstatedir}/lib/%{name}/lock.mdb
 
 
-%files selinux
-%{_datadir}/selinux/packages/%{selinuxtype}/%{name}.pp.bz2
-%ghost %verify(not md5 size mode mtime) %{_sharedstatedir}/selinux/%{selinuxtype}/active/modules/200/%{name}
-%{_datadir}/selinux/devel/include/%{moduletype}/ipp-%{name}.if
+#%files selinux
+#%{_datadir}/selinux/packages/%{selinuxtype}/%{name}.pp.bz2
+#%ghost %verify(not md5 size mode mtime) %{_sharedstatedir}/selinux/%{selinuxtype}/active/modules/200/%{name}
+#%{_datadir}/selinux/devel/include/%{moduletype}/ipp-%{name}.if
 
-%post selinux
-%selinux_modules_install -s %{selinuxtype} %{_datadir}/selinux/packages/%{selinuxtype}/%{name}.pp.bz2
-%selinux_relabel_post -s %{selinuxtype}
+#%post selinux
+#%selinux_modules_install -s %{selinuxtype} %{_datadir}/selinux/packages/%{selinuxtype}/%{name}.pp.bz2
+#%selinux_relabel_post -s %{selinuxtype}
 
-%postun selinux
-if [ $1 -eq 0 ]; then
-    %selinux_modules_uninstall -s %{selinuxtype} %{name}
-fi
+#%postun selinux
+#if [ $1 -eq 0 ]; then
+#    %selinux_modules_uninstall -s %{selinuxtype} %{name}
+#fi
 
-%posttrans selinux
-%selinux_relabel_post -s %{selinuxtype}
+#%posttrans selinux
+#%selinux_relabel_post -s %{selinuxtype}
 
 %changelog
 * Tue Aug 16 2022 Steve Grubb <sgrubb@redhat.com> 1.1.5-1
