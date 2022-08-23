@@ -26,7 +26,7 @@ BuildRequires: uthash-devel
 #%endif
 
 Requires: %{name}-plugin
-Recommends: %{name}-selinux
+#Recommends: %{name}-selinux
 Requires(pre): shadow-utils
 Requires(post): systemd-units
 Requires(preun): systemd-units
@@ -116,11 +116,11 @@ cat %{buildroot}/%{_datadir}/%{name}/sample-rules/README-rules \
   | grep '^[0-9]' > %{buildroot}/%{_datadir}/%{name}/default-ruleset.known-libs
 chmod 644 %{buildroot}/%{_datadir}/%{name}/default-ruleset.known-libs
 
-# selinux
-install -d %{buildroot}%{_datadir}/selinux/packages/%{selinuxtype}
-install -m 0644 %{name}-selinux-%{semodule_version}/%{name}.pp.bz2 %{buildroot}%{_datadir}/selinux/packages/%{selinuxtype}
-install -d -p %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}
-install -p -m 644 %{name}-selinux-%{semodule_version}/%{name}.if %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}/ipp-%{name}.if
+## selinux
+#install -d %{buildroot}%{_datadir}/selinux/packages/%{selinuxtype}
+#install -m 0644 %{name}-selinux-%{semodule_version}/%{name}.pp.bz2 %{buildroot}%{_datadir}/selinux/packages/%{selinuxtype}
+#install -d -p %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}
+#install -p -m 644 %{name}-selinux-%{semodule_version}/%{name}.if %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}/ipp-%{name}.if
 
 #cleanup
 find %{buildroot} \( -name '*.la' -o -name '*.a' \) -delete
