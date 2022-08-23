@@ -1,4 +1,4 @@
-specfile_path: ci.spec
+specfile_path: CI/fapolicyd.spec
 
 upstream_package_name: fapolicyd
 downstream_package_name: fapolicyd
@@ -9,5 +9,5 @@ jobs:
 - job: tests
   trigger: pull_request
   targets:
-    - fedora-all
-    - epel-8
+    - fedora-rawhide
+    - epel-all
