@@ -1,4 +1,4 @@
-specfile_path: fapolicyd-CI.spec
+specfile_path: CI/fapolicyd.spec
 
 upstream_package_name: fapolicyd
 downstream_package_name: fapolicyd
