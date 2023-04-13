@@ -6,9 +6,9 @@ upstream_tag_template: v{version}
 
 
 jobs:
-- job: tests
-  trigger: pull_request
-  targets:
-    - fedora-rawhide
-    - epel-9
-    - epel-8
+  - job: tests
+    trigger: pull_request
+    targets:
+      - fedora-rawhide
+      - epel-9
+      - epel-8
