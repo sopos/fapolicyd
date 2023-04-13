@@ -5,9 +5,7 @@ downstream_package_name: fapolicyd
 upstream_tag_template: v{version}
 
 actions:
-    create-archive:
-      - bash -c "git archive --prefix=fapolicyd-{version}/ -o fapolicyd-{version}.tar.gz HEAD"
-      - bash -c "ls -1 ./fapolicyd-*.tar.gz"
+    fix-spec-file:
       - bash -c "curl -o fapolicyd-selinux-0.4.tar.gz https://github.com/linux-application-whitelisting/fapolicyd-selinux/archive/refs/tags/v0.4.tar.gz >&2"
       - bash -c "curl -o uthash-2.3.0.tar.gz https://github.com/troydhanson/uthash/archive/refs/tags/v2.3.0.tar.gz >&2"
 
