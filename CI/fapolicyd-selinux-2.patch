@@ -1,0 +1,19 @@
+diff -up ./fapolicyd-selinux-0.4/fapolicyd.te.selinux2 ./fapolicyd-selinux-0.4/fapolicyd.te
+--- ./fapolicyd-selinux-0.4/fapolicyd.te.selinux2	2022-11-11 10:46:51.016420807 +0100
++++ ./fapolicyd-selinux-0.4/fapolicyd.te	2022-11-11 10:47:25.161793205 +0100
+@@ -39,10 +39,15 @@ allow fapolicyd_t self:unix_dgram_socket
+ 
+ gen_require(`
+ 	attribute file_type;
++    attribute filesystem_type;
++    attribute mountpoint;
+ ')
+ allow fapolicyd_t file_type:dir { watch_mount watch_with_perm };
+ allow fapolicyd_t file_type:file { watch_mount watch_with_perm };
+ 
++allow fapolicyd_t filesystem_type : filesystem { watch };
++allow fapolicyd_t mountpoint : dir { watch_sb };
++
+ manage_files_pattern(fapolicyd_t, fapolicyd_log_t, fapolicyd_log_t)
+ logging_log_filetrans(fapolicyd_t, fapolicyd_log_t, file)
+ 

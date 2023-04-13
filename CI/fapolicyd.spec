@@ -33,7 +33,8 @@ Requires(preun): systemd-units
 Requires(postun): systemd-units
 
 Patch1: fapolicyd-uthash-bundle.patch
-Patch2: fapolicyd-selinux.patch
+Patch2: fapolicyd-selinux-1.patch
+Patch15: fapolicyd-selinux-2.patch
 
 %description
 Fapolicyd (File Access Policy Daemon) implements application whitelisting
@@ -66,7 +67,9 @@ The %{name}-selinux package contains selinux policy for the %{name} daemon.
 %patch1 -p1 -b .uthash
 %endif
 
-%patch2 -p1 -b .selinux
+%patch2 -p1 -b .selinux1
+%patch15 -p1 -b .selinux2
+
 
 # generate rules for python
 sed -i "s|%python2_path%|`readlink -f %{__python2}`|g" rules.d/*.rules
@@ -217,6 +220,7 @@ fi
 %ghost %verify(not md5 size mtime) %attr(644,root,%{name}) %{_sysconfdir}/%{name}/rules.d/*
 %ghost %verify(not md5 size mtime) %attr(644,root,%{name}) %{_sysconfdir}/%{name}/%{name}.rules
 %config(noreplace) %attr(644,root,%{name}) %{_sysconfdir}/%{name}/%{name}.conf
+%config(noreplace) %attr(644,root,%{name}) %{_sysconfdir}/%{name}/rpm-filter.conf
 %config(noreplace) %attr(644,root,%{name}) %{_sysconfdir}/%{name}/%{name}.trust
 %ghost %attr(644,root,%{name}) %{_sysconfdir}/%{name}/compiled.rules
 %attr(644,root,root) %{_unitdir}/%{name}.service
