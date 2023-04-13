@@ -134,20 +134,25 @@ diff -up ./fapolicyd-selinux-0.4/fapolicyd.te.selinux ./fapolicyd-selinux-0.4/fa
  ########################################
  #
  # Declarations
-@@ -36,6 +37,12 @@ allow fapolicyd_t self:process { setcap
+@@ -36,6 +37,17 @@ allow fapolicyd_t self:process { setcap
  allow fapolicyd_t self:unix_stream_socket create_stream_socket_perms;
  allow fapolicyd_t self:unix_dgram_socket create_socket_perms;
  
 +gen_require(`
 +	attribute file_type;
++    attribute filesystem_type;
++    attribute mountpoint;
 +')
 +allow fapolicyd_t file_type:dir { getattr search open watch_mount watch_with_perm };
-+allow fapolicyd_t file_type:file { getattr search open watch_mount watch_with_perm };
++allow fapolicyd_t file_type:file { getattr open watch_mount watch_with_perm };
++
++allow fapolicyd_t filesystem_type : filesystem { watch };
++allow fapolicyd_t mountpoint : dir { watch_sb };
 +
  manage_files_pattern(fapolicyd_t, fapolicyd_log_t, fapolicyd_log_t)
  logging_log_filetrans(fapolicyd_t, fapolicyd_log_t, file)
  
-@@ -61,16 +68,10 @@ corecmd_exec_bin(fapolicyd_t)
+@@ -61,23 +68,14 @@ corecmd_exec_bin(fapolicyd_t)
  
  domain_read_all_domains_state(fapolicyd_t)
  
@@ -165,3 +170,10 @@ diff -up ./fapolicyd-selinux-0.4/fapolicyd.te.selinux ./fapolicyd-selinux-0.4/fa
  
  logging_send_syslog_msg(fapolicyd_t)
  dbus_system_bus_client(fapolicyd_t)
+ 
+-userdom_watch_mount_tmp_dirs(fapolicyd_t)
+-userdom_watch_with_perm_tmp_dirs(fapolicyd_t)
+-
+ optional_policy(`
+         rpm_read_db(fapolicyd_t)
+         allow fapolicyd_t rpm_var_lib_t:file { create };
