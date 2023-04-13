@@ -32,8 +32,8 @@ Requires(post): systemd-units
 Requires(preun): systemd-units
 Requires(postun): systemd-units
 
-Patch1: ../fapolicyd-uthash-bundle.patch
-Patch2: ../fapolicyd-selinux.patch
+Patch1: fapolicyd-uthash-bundle.patch
+Patch2: fapolicyd-selinux.patch
 
 %description
 Fapolicyd (File Access Policy Daemon) implements application whitelisting
