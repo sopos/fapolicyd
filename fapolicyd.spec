@@ -1,6 +1,6 @@
 %global selinuxtype targeted
 %global moduletype contrib
-%define semodule_version 0.4
+%define semodule_version 0.5
 
 Summary: Application Whitelisting Daemon
 Name: fapolicyd
@@ -32,7 +32,6 @@ Requires(preun): systemd-units
 Requires(postun): systemd-units
 
 Patch1: fapolicyd-uthash-bundle.patch
-Patch2: fapolicyd-selinux.patch
 
 %description
 Fapolicyd (File Access Policy Daemon) implements application whitelisting
@@ -64,8 +63,6 @@ The %{name}-selinux package contains selinux policy for the %{name} daemon.
 %setup -q -D -T -a 2
 %patch1 -p1 -b .uthash
 %endif
-
-%patch2 -p1 -b .selinux
 
 
 # generate rules for python
