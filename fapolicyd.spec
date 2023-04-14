@@ -9,7 +9,6 @@ Release: 1
 License: GPLv3+
 URL: http://people.redhat.com/sgrubb/fapolicyd
 Source0: https://people.redhat.com/sgrubb/fapolicyd/%{name}-%{version}.tar.gz
-#Source1: https://github.com/linux-application-whitelisting/% {name}-selinux/releases/download/v% {semodule_version}/% {name}-selinux-% {semodule_version}.tar.gz
 # https://github.com/linux-application-whitelisting/fapolicyd-selinux/archive/refs/tags/v0.4.tar.gz#/fapolicyd-selinux-0.4.tar.gz
 Source1: https://github.com/linux-application-whitelisting/%{name}-selinux/archive/refs/tags/v%{semodule_version}.tar.gz#/%{name}-selinux-%{semodule_version}.tar.gz
 # we bundle uthash for rhel9
