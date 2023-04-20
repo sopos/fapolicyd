@@ -9,7 +9,6 @@ Release: 1
 License: GPLv3+
 URL: http://people.redhat.com/sgrubb/fapolicyd
 Source0: https://people.redhat.com/sgrubb/fapolicyd/%{name}-%{version}.tar.gz
-# https://github.com/linux-application-whitelisting/fapolicyd-selinux/archive/refs/tags/v0.4.tar.gz#/fapolicyd-selinux-0.4.tar.gz
 Source1: https://github.com/linux-application-whitelisting/%{name}-selinux/archive/refs/tags/v%{semodule_version}.tar.gz#/%{name}-selinux-%{semodule_version}.tar.gz
 # we bundle uthash for rhel9
 Source2: https://github.com/troydhanson/uthash/archive/refs/tags/v2.3.0.tar.gz#/uthash-2.3.0.tar.gz
@@ -33,6 +32,7 @@ Requires(postun): systemd-units
 
 Patch1: fapolicyd-uthash-bundle.patch
 Patch2: fapolicyd-selinux.patch
+Patch3: fapolicyd-selinux-el8.patch
 
 %description
 Fapolicyd (File Access Policy Daemon) implements application whitelisting
@@ -66,6 +66,10 @@ The %{name}-selinux package contains selinux policy for the %{name} daemon.
 %endif
 
 %patch2 -p1 -b .selinux
+%if 0%{?rhel} == 8
+# Patch3: fapolicyd-selinux-el8.patch
+%patch3 -p1 -b .selinux-el8
+%endif
 
 # generate rules for python
 sed -i "s|%python2_path%|`readlink -f %{__python2}`|g" rules.d/*.rules
@@ -73,10 +77,10 @@ sed -i "s|%python3_path%|`readlink -f %{__python3}`|g" rules.d/*.rules
 
 # Detect run time linker directly from bash
 interpret=`readelf -e /usr/bin/bash \
-                   | grep Requesting \
-                   | sed 's/.$//' \
-                   | rev | cut -d" " -f1 \
-                   | rev`
+		| grep Requesting \
+		| sed 's/.$//' \
+		| rev | cut -d" " -f1 \
+		| rev`
 
 sed -i "s|%ld_so_path%|`realpath $interpret`|g" rules.d/*.rules
 
@@ -121,7 +125,7 @@ install -m 0644 %{name}-selinux-%{semodule_version}/%{name}.pp.bz2 %{buildroot}%
 install -d -p %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}
 install -p -m 644 %{name}-selinux-%{semodule_version}/%{name}.if %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}/ipp-%{name}.if
 
-#cleanup
+# cleanup
 find %{buildroot} \( -name '*.la' -o -name '*.a' \) -delete
 
 %define manage_default_rules   default_changed=0 \
@@ -130,33 +134,33 @@ find %{buildroot} \( -name '*.la' -o -name '*.a' \) -delete
     diff %{_sysconfdir}/%{name}/%{name}.rules %{_datadir}/%{name}/%{name}.rules.known-libs >/dev/null 2>&1 || { \
       default_changed=1; \
       #echo "change detected in fapolicyd.rules"; \
-      } \
+    } \
   fi \
   if [ -e %{_sysconfdir}/%{name}/rules.d ]; then \
-    default_ruleset='' \
+    default_ruleset=''; \
     # get listing of default rule files in known-libs \
-    [ -e %{_datadir}/%{name}/default-ruleset.known-libs ] && default_ruleset=`cat %{_datadir}/%{name}/default-ruleset.known-libs` \
+    [ -e %{_datadir}/%{name}/default-ruleset.known-libs ] && default_ruleset=`cat %{_datadir}/%{name}/default-ruleset.known-libs`; \
     # check for removed or added files \
-    default_count=`echo "$default_ruleset" | wc -l` \
-    current_count=`ls -1 %{_sysconfdir}/%{name}/rules.d/*.rules | wc -l` \
+    default_count=`echo "$default_ruleset" | wc -l`; \
+    current_count=`ls -1 %{_sysconfdir}/%{name}/rules.d/*.rules | wc -l`; \
     [ $default_count -eq $current_count ] || { \
       default_changed=1; \
-      #echo "change detected in number of rule files d:$default_count vs c:$current_count"; \
-      } \
+      # echo "change detected in number of rule files d:$default_count vs c:$current_count"; \
+    }; \
     for file in %{_sysconfdir}/%{name}/rules.d/*.rules; do \
       if echo "$default_ruleset" | grep -q "`basename $file`"; then \
         # compare content of the rule files \
         diff $file %{_datadir}/%{name}/sample-rules/`basename $file` >/dev/null 2>&1 || { \
           default_changed=1; \
-          #echo "change detected in `basename $file`"; \
-          } \
+          # echo "change detected in `basename $file`"; \
+        }; \
       else \
         # added file detected \
-        default_changed=1 \
-        #echo "change detected in added rules file `basename $file`"; \
-      fi \
-    done \
-  fi \
+        default_changed=1; \
+        # echo "change detected in added rules file `basename $file`"; \
+      fi; \
+    done; \
+  fi; \
   # remove files if no change against default rules detected \
   [ $default_changed -eq 0 ] && rm -rf %{_sysconfdir}/%{name}/%{name}.rules %{_sysconfdir}/%{name}/rules.d/* || : \
 
@@ -232,7 +236,6 @@ fi
 %ghost %attr(660,root,%{name}) /run/%{name}/%{name}.fifo
 %ghost %attr(660,%{name},%{name}) %verify(not md5 size mtime) %{_localstatedir}/lib/%{name}/data.mdb
 %ghost %attr(660,%{name},%{name}) %verify(not md5 size mtime) %{_localstatedir}/lib/%{name}/lock.mdb
-
 
 %files selinux
 %{_datadir}/selinux/packages/%{selinuxtype}/%{name}.pp.bz2
