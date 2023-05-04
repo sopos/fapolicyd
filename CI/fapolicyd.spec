@@ -41,7 +41,15 @@ Summary:        Fapolicyd selinux
 Group:          Applications/System
 Requires:       %{name} = %{version}-%{release}
 BuildRequires:  selinux-policy
-BuildRequires:  selinux-policy-devel
+%if 0%{?rhel} < 9
+BuildRequires:  selinux-policy-devel >= 3.14.3-108
+%else
+%if 0%{?rhel} == 9
+BuildRequires:  selinux-policy-devel >= 38.1.2
+%else
+BuildRequires:  selinux-policy-devel >= 38.2
+%endif
+%endif
 BuildArch: noarch
 %{?selinux_requires}
 
