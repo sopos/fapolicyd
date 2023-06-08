@@ -1,0 +1,7 @@
+discover:
+    how: fmf
+    url: https://github.com/RedHat-SP-Security/tests.git
+    filter: component:fapolicyd & require:-library\(rhel-system-roles/basic\)
+    exclude: /Sanity/kmod-open
+execute:
+    how: tmt

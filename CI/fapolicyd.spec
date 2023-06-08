@@ -1,21 +1,34 @@
+%global selinuxtype targeted
+%global moduletype contrib
+%define semodule_version 0.6
+
 Summary: Application Whitelisting Daemon
 Name: fapolicyd
 Version: 1.2.1
-Release: 1%{?dist}
+Release: 1
 License: GPL-3.0-or-later
 URL: http://people.redhat.com/sgrubb/fapolicyd
 Source0: https://people.redhat.com/sgrubb/fapolicyd/%{name}-%{version}.tar.gz
+#S#ource1: https://github.com/linux-application-whitelisting/%{name}-selinux/archive/refs/tags/v%{semodule_version}.tar.gz#/%{name}-selinux-%{semodule_version}.tar.gz
+Source1: https://github.com/sopos/%{name}-selinux/archive/refs/tags/v%{semodule_version}.tar.gz#/%{name}-selinux-%{semodule_version}.tar.gz
+# we bundle uthash for rhel9
+Source2: https://github.com/troydhanson/uthash/archive/refs/tags/v2.3.0.tar.gz#/uthash-2.3.0.tar.gz
 BuildRequires: gcc
 BuildRequires: kernel-headers
 BuildRequires: autoconf automake make gcc libtool
 BuildRequires: systemd systemd-devel openssl-devel rpm-devel file-devel file
 BuildRequires: libcap-ng-devel libseccomp-devel lmdb-devel
 BuildRequires: python3-devel
+%if 0%{?rhel} == 0
 BuildRequires: uthash-devel
+%endif
+Recommends: %{name}-selinux
 Requires(pre): shadow-utils
 Requires(post): systemd-units
 Requires(preun): systemd-units
 Requires(postun): systemd-units
+
+Patch3: fapolicyd-uthash-bundle.patch
 
 %description
 Fapolicyd (File Access Policy Daemon) implements application whitelisting
@@ -23,9 +36,37 @@ to decide file access rights. Applications that are known via a reputation
 source are allowed access while unknown applications are not. The daemon
 makes use of the kernel's fanotify interface to determine file access rights.
 
+%package        selinux
+Summary:        Fapolicyd selinux
+Group:          Applications/System
+Requires:       %{name} = %{version}-%{release}
+BuildRequires:  selinux-policy
+%if 0%{?rhel} < 9
+BuildRequires:  selinux-policy-devel >= 3.14.3-108
+%else
+%if 0%{?rhel} == 9
+BuildRequires:  selinux-policy-devel >= 38.1.2
+%else
+BuildRequires:  selinux-policy-devel >= 38.2
+%endif
+%endif
+BuildArch: noarch
+%{?selinux_requires}
+
+%description    selinux
+The %{name}-selinux package contains selinux policy for the %{name} daemon.
 
 %prep
 %setup -q
+
+# selinux
+%setup -q -D -T -a 1
+
+%if 0%{?rhel} != 0
+# uthash
+%setup -q -D -T -a 2
+%patch3 -p1 -b .uthash
+%endif
 
 # generate rules for python
 sed -i "s|%python2_path%|`readlink -f %{__python2}`|g" rules.d/*.rules
@@ -44,14 +85,22 @@ sed -i "s|%ld_so_path%|`realpath $interpret`|g" rules.d/*.rules
 ./autogen.sh
 %configure \
     --with-audit \
+    --with-rpm \
     --disable-shared
 
-%make_build
+make CFLAGS="%{optflags}" %{?_smp_mflags}
+
+# selinux
+pushd %{name}-selinux-%{semodule_version}
+make
+popd
+
+# selinux
+%pre selinux
+%selinux_relabel_pre -s %{selinuxtype}
 
 %install
 %make_install
-mkdir -p %{buildroot}/%{python3_sitelib}/dnf-plugins/
-install -p -m 644 dnf/%{name}-dnf-plugin.py %{buildroot}/%{python3_sitelib}/dnf-plugins/
 install -p -m 644 -D init/%{name}-tmpfiles.conf %{buildroot}/%{_tmpfilesdir}/%{name}.conf
 mkdir -p %{buildroot}/%{_localstatedir}/lib/%{name}
 mkdir -p %{buildroot}/run/%{name}
@@ -63,6 +112,12 @@ cat %{buildroot}/%{_datadir}/%{name}/sample-rules/README-rules \
   | grep -B 100 'restrictive' \
   | grep '^[0-9]' > %{buildroot}/%{_datadir}/%{name}/default-ruleset.known-libs
 chmod 644 %{buildroot}/%{_datadir}/%{name}/default-ruleset.known-libs
+
+# selinux
+install -d %{buildroot}%{_datadir}/selinux/packages/%{selinuxtype}
+install -m 0644 %{name}-selinux-%{semodule_version}/%{name}.pp.bz2 %{buildroot}%{_datadir}/selinux/packages/%{selinuxtype}
+install -d -p %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}
+install -p -m 644 %{name}-selinux-%{semodule_version}/%{name}.if %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}/ipp-%{name}.if
 
 #cleanup
 find %{buildroot} \( -name '*.la' -o -name '*.a' \) -delete
@@ -177,8 +232,23 @@ fi
 %ghost %attr(660,root,%{name}) /run/%{name}/%{name}.fifo
 %ghost %attr(660,%{name},%{name}) %verify(not md5 size mtime) %{_localstatedir}/lib/%{name}/data.mdb
 %ghost %attr(660,%{name},%{name}) %verify(not md5 size mtime) %{_localstatedir}/lib/%{name}/lock.mdb
-%{python3_sitelib}/dnf-plugins/%{name}-dnf-plugin.py
-%{python3_sitelib}/dnf-plugins/__pycache__/%{name}-dnf-plugin.*.pyc
+
+%files selinux
+%{_datadir}/selinux/packages/%{selinuxtype}/%{name}.pp.bz2
+%ghost %verify(not md5 size mode mtime) %{_sharedstatedir}/selinux/%{selinuxtype}/active/modules/200/%{name}
+%{_datadir}/selinux/devel/include/%{moduletype}/ipp-%{name}.if
+
+%post selinux
+%selinux_modules_install -s %{selinuxtype} %{_datadir}/selinux/packages/%{selinuxtype}/%{name}.pp.bz2
+%selinux_relabel_post -s %{selinuxtype}
+
+%postun selinux
+if [ $1 -eq 0 ]; then
+    %selinux_modules_uninstall -s %{selinuxtype} %{name}
+fi
+
+%posttrans selinux
+%selinux_relabel_post -s %{selinuxtype}
 
 %changelog
 * Thu Feb 09 2023 Steve Grubb <sgrubb@redhat.com> 1.2.1-1
